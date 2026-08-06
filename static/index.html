@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iris Classifier — CodeAlpha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #17231C;
+    --ink-soft: #24352A;
+    --paper: #F4F2E9;
+    --paper-dim: #C9CDB9;
+    --line: #34473A;
+    --setosa: #9B85D6;
+    --versicolor: #5FA8C9;
+    --virginica: #D97AA6;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-body);
+    min-height:100vh;
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(155,133,214,0.10), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 20%, rgba(95,168,201,0.08), transparent);
+  }
+  .wrap{ max-width: 1060px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  header{ display:flex; justify-content:space-between; align-items:flex-end; gap:16px; border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:36px; flex-wrap:wrap;}
+  .eyebrow{ font-family: var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color: var(--paper-dim); margin:0 0 8px; }
+  h1{ font-family: var(--font-display); font-weight:500; font-size: clamp(28px, 4vw, 40px); margin:0; }
+  .meta{ font-family: var(--font-mono); font-size:12px; color: var(--paper-dim); text-align:right; line-height:1.6; }
+
+  .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items:start; }
+  @media (max-width: 800px){ .grid{ grid-template-columns: 1fr; } }
+
+  .panel-title{ font-family: var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color: var(--paper-dim); margin: 0 0 18px; }
+
+  .field{ margin-bottom: 22px; }
+  .field-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .field-head label{ font-family: var(--font-display); font-size:16px; }
+  .field-head .val{ font-family: var(--font-mono); font-size:14px; color: var(--setosa); }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:2px;
+    background: var(--line); border-radius:2px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+    background: var(--paper); border:2px solid var(--ink);
+    box-shadow: 0 0 0 1px var(--paper-dim); cursor:pointer; margin-top:-7px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:14px; height:14px; border-radius:50%; background: var(--paper);
+    border:2px solid var(--ink); cursor:pointer;
+  }
+  .range-track::-webkit-slider-runnable-track{ height:2px; }
+
+  .result-card{
+    border:1px solid var(--line); border-radius:2px; padding:28px;
+    background: rgba(244,242,233,0.03);
+  }
+  .diagram{ display:flex; justify-content:center; padding: 8px 0 20px; }
+  .species-name{ font-family: var(--font-display); font-size: 30px; text-align:center; margin: 4px 0 2px; transition: color .25s ease; }
+  .species-latin{ font-family: var(--font-mono); font-size:12px; text-align:center; color: var(--paper-dim); letter-spacing:.06em; margin-bottom:22px;}
+
+  .prob-row{ display:grid; grid-template-columns: 96px 1fr 46px; align-items:center; gap:12px; margin-bottom:10px; font-family: var(--font-mono); font-size:12px; }
+  .prob-bar-bg{ height:6px; background: var(--line); border-radius:3px; overflow:hidden; }
+  .prob-bar-fill{ height:100%; border-radius:3px; transition: width .4s ease; }
+
+  .accuracy-note{ font-family: var(--font-mono); font-size:11px; color: var(--paper-dim); margin-top:24px; padding-top:16px; border-top:1px solid var(--line); line-height:1.7; }
+  .accuracy-note b{ color: var(--paper); }
+
+  footer{ margin-top: 56px; font-family: var(--font-mono); font-size:11px; color: var(--paper-dim); text-align:center; }
+  footer a{ color: var(--paper-dim); }
+
+  .status-dot{ display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--versicolor); margin-right:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="eyebrow">CodeAlpha — Data Science Internship / Task 01</p>
+      <h1>Iris Flower Classifier</h1>
+    </div>
+    <div class="meta">
+      Model: Support Vector Machine<br>
+      <span id="acc-meta">Cross-validated accuracy: —</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: measurement inputs -->
+    <div>
+      <p class="panel-title">Specimen Measurements (cm)</p>
+
+      <div class="field">
+        <div class="field-head"><label for="sl">Sepal length</label><span class="val" id="sl-val">5.8</span></div>
+        <input type="range" id="sl" min="4" max="8" step="0.1" value="5.8">
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="sw">Sepal width</label><span class="val" id="sw-val">3.0</span></div>
+        <input type="range" id="sw" min="1.5" max="4.5" step="0.1" value="3.0">
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="pl">Petal length</label><span class="val" id="pl-val">4.0</span></div>
+        <input type="range" id="pl" min="1" max="7" step="0.1" value="4.0">
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="pw">Petal width</label><span class="val" id="pw-val">1.2</span></div>
+        <input type="range" id="pw" min="0.1" max="2.6" step="0.1" value="1.2">
+      </div>
+
+      <p class="accuracy-note" style="border-top:none;padding-top:0;">
+        Drag the sliders — the diagram and prediction on the right update live from the trained model.
+      </p>
+    </div>
+
+    <!-- RIGHT: result -->
+    <div class="result-card">
+      <p class="panel-title" style="margin-bottom:4px;"><span class="status-dot"></span>Prediction</p>
+      <div class="diagram" id="diagram"></div>
+      <div class="species-name" id="species-name">—</div>
+      <div class="species-latin" id="species-conf">—</div>
+
+      <div id="prob-list"></div>
+
+      <div class="accuracy-note" id="accuracy-note">Loading model metadata…</div>
+    </div>
+  </div>
+
+  <footer>
+    Trained on the classic Iris dataset (150 samples, 3 species) · SVM with tuned hyperparameters via GridSearchCV
+  </footer>
+</div>
+
+<script>
+const speciesColor = {
+  "Iris-setosa": "var(--setosa)",
+  "Iris-versicolor": "var(--versicolor)",
+  "Iris-virginica": "var(--virginica)"
+};
+const speciesColorHex = {
+  "Iris-setosa": "#9B85D6",
+  "Iris-versicolor": "#5FA8C9",
+  "Iris-virginica": "#D97AA6"
+};
+const latinName = {
+  "Iris-setosa": "Iris setosa",
+  "Iris-versicolor": "Iris versicolor",
+  "Iris-virginica": "Iris virginica"
+};
+
+const sl = document.getElementById('sl');
+const sw = document.getElementById('sw');
+const pl = document.getElementById('pl');
+const pw = document.getElementById('pw');
+
+function renderFlower(sepalLen, sepalWid, petalLen, petalWid, color){
+  // Proportions are literally derived from the measurements — the
+  // diagram IS the data, not decoration.
+  const cx = 90, cy = 90;
+  const sepalW = 8 + sepalWid * 6;
+  const sepalL = 10 + sepalLen * 7;
+  const petalW = 4 + petalWid * 10;
+  const petalL = 6 + petalLen * 6;
+
+  const sepalAngles = [0, 90, 180, 270];
+  const petalAngles = [45, 135, 225, 315];
+
+  function leaf(len, wid, angle, fill, opacity){
+    const rad = angle * Math.PI/180;
+    const x2 = cx + Math.cos(rad)*len;
+    const y2 = cy + Math.sin(rad)*len;
+    const perpX = Math.cos(rad+Math.PI/2)*wid/2;
+    const perpY = Math.sin(rad+Math.PI/2)*wid/2;
+    return `<path d="M ${cx} ${cy} Q ${cx+perpX} ${cy+perpY} ${x2} ${y2} Q ${cx-perpX} ${cy-perpY} ${cx} ${cy} Z"
+             fill="${fill}" opacity="${opacity}" stroke="${fill}" stroke-width="0.5"/>`;
+  }
+
+  let svg = `<svg width="180" height="180" viewBox="0 0 180 180">`;
+  sepalAngles.forEach(a => svg += leaf(sepalL, sepalW, a, "#7C8A72", 0.55));
+  petalAngles.forEach(a => svg += leaf(petalL, petalW, a, color, 0.9));
+  svg += `<circle cx="${cx}" cy="${cy}" r="5" fill="#F4F2E9"/>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+function updateVals(){
+  document.getElementById('sl-val').textContent = parseFloat(sl.value).toFixed(1);
+  document.getElementById('sw-val').textContent = parseFloat(sw.value).toFixed(1);
+  document.getElementById('pl-val').textContent = parseFloat(pl.value).toFixed(1);
+  document.getElementById('pw-val').textContent = parseFloat(pw.value).toFixed(1);
+}
+
+let debounceTimer = null;
+async function predict(){
+  updateVals();
+  document.getElementById('diagram').innerHTML = renderFlower(
+    parseFloat(sl.value), parseFloat(sw.value), parseFloat(pl.value), parseFloat(pw.value), "#8A9482"
+  );
+
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    try{
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          sepal_length: parseFloat(sl.value),
+          sepal_width: parseFloat(sw.value),
+          petal_length: parseFloat(pl.value),
+          petal_width: parseFloat(pw.value)
+        })
+      });
+      const data = await res.json();
+      renderResult(data);
+    }catch(err){
+      document.getElementById('species-name').textContent = 'API not reachable';
+      document.getElementById('species-conf').textContent = 'Run: uvicorn app:app --reload';
+    }
+  }, 120);
+}
+
+function renderResult(data){
+  const color = speciesColorHex[data.species] || "#F4F2E9";
+  document.getElementById('diagram').innerHTML = renderFlower(
+    parseFloat(sl.value), parseFloat(sw.value), parseFloat(pl.value), parseFloat(pw.value), color
+  );
+  document.getElementById('species-name').textContent = `${data.emoji}  ${data.common_name}`;
+  document.getElementById('species-name').style.color = color;
+  document.getElementById('species-conf').textContent = `${latinName[data.species]} · ${data.confidence}% confidence`;
+
+  const probList = document.getElementById('prob-list');
+  probList.innerHTML = '';
+  Object.entries(data.probabilities)
+    .sort((a,b) => b[1]-a[1])
+    .forEach(([sp, pct]) => {
+      const c = speciesColorHex[sp];
+      probList.innerHTML += `
+        <div class="prob-row">
+          <span>${sp.replace('Iris-','')}</span>
+          <div class="prob-bar-bg"><div class="prob-bar-fill" style="width:${pct}%; background:${c};"></div></div>
+          <span style="text-align:right;">${pct}%</span>
+        </div>`;
+    });
+}
+
+[sl, sw, pl, pw].forEach(el => el.addEventListener('input', predict));
+
+async function loadMeta(){
+  try{
+    const res = await fetch('/api/health');
+    const data = await res.json();
+    const m = data.model_metadata;
+    document.getElementById('acc-meta').textContent = `Cross-validated accuracy: ${m.cv_accuracy_10fold}%`;
+    document.getElementById('accuracy-note').innerHTML =
+      `<b>${m.cv_accuracy_10fold}%</b> 10-fold CV accuracy on the full dataset ·
+       <b>${m.held_out_test_accuracy}%</b> on a held-out test split ·
+       tuned via GridSearchCV over kernel, C and gamma.`;
+  }catch(err){
+    document.getElementById('accuracy-note').textContent = 'Could not load model metadata — is the API running?';
+  }
+}
+
+updateVals();
+predict();
+loadMeta();
+</script>
+</body>
+</html>

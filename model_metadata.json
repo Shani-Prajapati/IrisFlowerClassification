@@ -1,0 +1,28 @@
+{
+  "features": [
+    "SepalLengthCm",
+    "SepalWidthCm",
+    "PetalLengthCm",
+    "PetalWidthCm"
+  ],
+  "classes": [
+    "Iris-setosa",
+    "Iris-versicolor",
+    "Iris-virginica"
+  ],
+  "cv_accuracy_10fold": 95.33,
+  "held_out_test_accuracy": 93.33,
+  "held_out_test_macro_f1": 93.33,
+  "best_params": {
+    "clf__C": 0.1,
+    "clf__gamma": "scale",
+    "clf__kernel": "linear"
+  },
+  "model_comparison": {
+    "Logistic Regression": 95.83,
+    "KNN": 95.83,
+    "Decision Tree": 95.0,
+    "Random Forest": 95.0,
+    "SVM (RBF)": 96.67
+  }
+}
