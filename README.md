@@ -1,4 +1,4 @@
-# CodeAlpha_IrisFlowerClassification
+# IrisFlowerClassification
 
 Task 1 of the CodeAlpha Data Science internship: classify Iris flowers
 (*setosa*, *versicolor*, *virginica*) from sepal/petal measurements, with a
