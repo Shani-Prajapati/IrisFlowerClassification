@@ -75,4 +75,4 @@ the `/api/predict` endpoint of the FastAPI backend.
 `GET /api/health` — returns model metadata (accuracy, best hyperparameters).
 
 ---
-Built for the CodeAlpha Data Science internship — Task 1: Iris Flower Classification.
+Built for the Data Science internship — Task 1: Iris Flower Classification.
